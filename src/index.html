@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>ברוכים הבאים לאפליקציה!</h1>
+    <div id="counter">טוען...</div>
+    <script>
+        fetch('/')
+            .then(res => res.text())
+            .then(data => document.getElementById('counter').innerText = data);
+    </script>
+</body>
+</html>
