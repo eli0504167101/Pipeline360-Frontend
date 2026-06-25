@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <title>Hotel Management</title>
+</head>
 <body>
-    <h1>ברוכים הבאים לאפליקציה!</h1>
-    <div id="counter">טוען...</div>
+    <h1>Hotel Dashboard</h1>
+    <div id="status">Checking connection...</div>
+
     <script>
-        fetch('/')
-            .then(res => res.text())
-            .then(data => document.getElementById('counter').innerText = data);
+        // פנייה לשרת ה-Backend
+        fetch('http://localhost:8080/health')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status').innerText = "System Status: " + data.status;
+            })
+            .catch(error => {
+                document.getElementById('status').innerText = "Error: Could not connect to backend.";
+            });
     </script>
 </body>
 </html>
