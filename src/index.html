@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self'; font-src 'self' https://fonts.gstatic.com; style-src 'self' https://fonts.googleapis.com; connect-src 'self' http://localhost:8080;">
     <title>Hotel Management</title>
 </head>
 <body>
@@ -8,15 +10,16 @@
     <div id="status">Checking connection...</div>
 
     <script>
-        // פנייה לשרת ה-Backend
-        fetch('http://localhost:8080/health')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('status').innerText = "System Status: " + data.status;
-            })
-            .catch(error => {
-                document.getElementById('status').innerText = "Error: Could not connect to backend.";
-            });
-    </script>
+    // שימוש בנתיב יחסי במקום ב-localhost
+    fetch('http://localhost:8080/health')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('status').innerText = "System Status: " + data.status;
+        })
+        .catch(error => {
+            document.getElementById('status').innerText = "Error: Could not connect to backend.";
+            console.error("Connection error:", error);
+        });
+</script>
 </body>
 </html>
