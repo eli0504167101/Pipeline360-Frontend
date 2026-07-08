@@ -1,34 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="he" dir="rtl">
 <head>
-   <meta http-equiv="Content-Security-Policy" 
-      content="default-src 'self'; 
-               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
-               font-src 'self' https://fonts.gstatic.com; 
-               script-src 'self' 'unsafe-inline'; 
-               connect-src 'self';">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Hotel Dashboard</h1>
-    <div id="status">Checking connection...</div>
-   
-
-<div id="visit-counter" style="font-size: 20px; font-weight: bold; margin-top: 20px;"></div>
-
-    <script>
-    // שנה את זה ל:
-    fetch('/api/visits')
-        .then(response => response.text()) // ה-Backend שלך מחזיר טקסט ישיר
-        .then(data => {
-            // הצגת הסטטוס
-            document.getElementById('status').innerText = "System Status: Connected";
-            // הצגת המונה בתוך האלמנט החדש
-            document.getElementById('visit-counter').innerText = data;
-        })
-        .catch(error => {
-            document.getElementById('status').innerText = "Error: Could not connect to backend.";
-            console.error("Connection error:", error);
-        });
-</script>
+    <form id="reservationForm">
+        <input type="text" id="fullName" placeholder="Full Name" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="date" id="checkIn" required>
+        <input type="date" id="checkOut" required>
+        <select id="hotelSelect">
+            <option value="123">Hotel Example</option> </select> 
+        <button type="submit">Submit Reservation</button>
+    </form>
+    <script src="script.js"></script>
 </body>
 </html>
