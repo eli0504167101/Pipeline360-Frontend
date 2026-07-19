@@ -1,47 +1,242 @@
-/* עיצוב כללי */
+* {
+    box-sizing: border-box;
+}
+
+html,
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #71b7e6, #9b59b6); /* רקע צבעוני */
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #6eb7e8, #9b59b6);
+    color: #333;
+    direction: rtl;
+}
+
+/* ניווט צדדי */
+.top-nav {
+    position: fixed;
+    top: 50%;
+    right: 35px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 100;
+}
+
+.top-nav a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 230px;
+    min-height: 58px;
+    padding: 14px 22px;
+    border-radius: 14px;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 17px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+    backdrop-filter: blur(8px);
+    transition: transform 0.2s ease,
+                background 0.2s ease,
+                box-shadow 0.2s ease;
+}
+
+.top-nav a:hover {
+    background: rgba(155, 89, 182, 0.95);
+    transform: translateX(-5px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+}
+
+.top-nav a:active {
+    transform: scale(0.98);
+}
+
+/* אזור מרכזי */
+.page-container {
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    color: #333;
+    padding: 40px 320px 40px 40px;
 }
 
 /* כרטיס הטופס */
-#reservationForm {
+.card {
+    width: 100%;
+    max-width: 460px;
     background: white;
     padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    width: 350px;
+    border-radius: 16px;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.2);
 }
 
-h1 { text-align: center; color: #fff; margin-bottom: 20px; }
-
-/* עיצוב שדות קלט */
-input, select {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-sizing: border-box; /* חשוב כדי שה-padding לא ירחיב את ה-input */
+.card h1 {
+    margin: 0 0 24px;
+    text-align: center;
+    color: #333;
 }
 
-/* עיצוב הכפתור */
+.page-description {
+    margin: 0 0 22px;
+    text-align: center;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* טפסים */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: -7px;
+}
+
+input,
+select,
 button {
     width: 100%;
-    padding: 12px;
-    background-color: #9b59b6;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background 0.3s;
+    min-height: 48px;
+    padding: 12px 14px;
+    border-radius: 9px;
+    font-size: 15px;
+    font-family: inherit;
 }
 
-button:hover { background-color: #8e44ad; }
+input,
+select {
+    border: 1px solid #ddd;
+    background: white;
+    outline: none;
+}
+
+input:focus,
+select:focus {
+    border-color: #9b59b6;
+    box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.15);
+}
+
+button {
+    border: none;
+    background: #9b59b6;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease,
+                transform 0.2s ease;
+}
+
+button:hover {
+    background: #8446a0;
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* תוצאות */
+#reservationResult,
+#lookupResult {
+    margin-top: 20px;
+}
+
+.reservation-result {
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #f8f8f8;
+    line-height: 1.7;
+}
+
+.cancel-button {
+    margin-top: 12px;
+    background: #c0392b;
+}
+
+.cancel-button:hover {
+    background: #a93226;
+}
+
+/* התאמה למסכים קטנים */
+@media (max-width: 900px) {
+    .top-nav {
+        position: static;
+        transform: none;
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding: 20px;
+    }
+
+    .top-nav a {
+        width: auto;
+        min-width: 210px;
+    }
+
+    .page-container {
+        min-height: auto;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 520px) {
+    .top-nav {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .top-nav a {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .card {
+        padding: 22px;
+    }
+}
+.hotel-details {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 10px;
+    background: #f6f2fa;
+    border: 1px solid #e4d7ec;
+    line-height: 1.6;
+}
+
+.hotel-details h3 {
+    margin: 0 0 10px;
+    color: #8446a0;
+}
+
+.hotel-details p {
+    margin: 6px 0;
+}
+
+.success-message {
+    padding: 16px;
+    border-radius: 10px;
+    background: #e9f7ef;
+    border: 1px solid #b7dfc8;
+    color: #1e6b3d;
+}
+
+.error-message {
+    padding: 14px;
+    border-radius: 10px;
+    background: #fdecea;
+    border: 1px solid #efb8b2;
+    color: #a93226;
+}

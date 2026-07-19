@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>חיפוש הזמנה</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <nav class="top-nav">
+       <a href="index.html">חזרה להזמנה חדשה</a>
+    </nav>
+
+    <main class="page-container">
+        <section class="card">
+            <h1>חיפוש הזמנה קיימת</h1>
+
+            <p class="page-description">
+                הזן שם מלא או כתובת אימייל כדי למצוא את פרטי ההזמנה.
+            </p>
+
+            <form id="lookupForm">
+                <label for="lookupQuery">שם מלא או אימייל</label>
+
+                <input
+                    type="text"
+                    id="lookupQuery"
+                    name="lookupQuery"
+                    placeholder="לדוגמה: ישראל ישראלי או email@example.com"
+                    autocomplete="off"
+                    required
+                >
+
+                <button type="submit">חיפוש הזמנה</button>
+            </form>
+
+            <div id="lookupResult" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <script src="lookup-script.js"></script>
+</body>
+</html>

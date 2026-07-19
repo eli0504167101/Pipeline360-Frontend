@@ -3,19 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הזמנת מלון</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Hotel Dashboard</h1>
-    <form id="reservationForm">
-        <input type="text" id="fullName" placeholder="Full Name" required>
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="date" id="checkIn" required>
-        <input type="date" id="checkOut" required>
-        <select id="hotelSelect">
-            <option value="123">Hotel Example</option> </select> 
-        <button type="submit">Submit Reservation</button>
-    </form>
+    <nav class="top-nav">
+       <a href="lookup.html">חיפוש וביטול הזמנה</a>
+   </nav>
+
+    <main class="page-container">
+        <section class="card">
+            <h1>הזמנת מלון חדשה</h1>
+
+            <form id="reservationForm">
+                <input type="text" id="fullName" placeholder="שם מלא" required>
+                <input type="email" id="email" placeholder="כתובת אימייל" required>
+
+                <label for="checkIn">תאריך כניסה</label>
+                <input type="date" id="checkIn" required>
+
+                <label for="checkOut">תאריך יציאה</label>
+                <input type="date" id="checkOut" required>
+
+                <label for="hotelSelect">בחר מלון</label>
+
+                <select id="hotelSelect" required>
+                    <option value="">טוען מלונות...</option>
+                </select>
+
+                <div id="hotelDetails"></div>
+
+                <button type="submit">בצע הזמנה</button>
+            </form>
+
+            <div id="reservationResult"></div>
+        </section>
+    </main>
+
     <script src="script.js"></script>
 </body>
 </html>
