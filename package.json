@@ -1,7 +1,18 @@
 {
   "name": "hotel-frontend",
   "version": "1.0.0",
+  "description": "Pipeline360 static frontend service",
   "scripts": {
-    "start": "echo 'Frontend placeholder'"
-  }
+    "check": "node --check src/script.js && node --check src/lookup-script.js",
+    "test": "npm run check",
+    "start": "echo \"The frontend is served by NGINX\""
+  },
+  "keywords": [
+    "pipeline360",
+    "hotel",
+    "frontend",
+    "nginx"
+  ],
+  "author": "Eli",
+  "license": "ISC"
 }
