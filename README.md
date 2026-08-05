@@ -1,25 +1,35 @@
-# Frontend Service
+# Pipeline360 Frontend
 
-## Overview
+Frontend application for the Pipeline360 cloud-native hotel reservation platform.
 
-The frontend service provides the user interface for the Pipeline360 hotel reservation system.
+The service is a static browser application built with HTML, CSS and JavaScript. It is served by NGINX inside a Docker container and communicates with the Pipeline360 Backend through relative `/api` routes.
 
-It is a static web application built with HTML, CSS, and JavaScript, and served by NGINX inside a Docker container.
-
-The frontend communicates with the backend through the `/api` path.
+> [!IMPORTANT]
+> Development work is performed on the `dev` branch. Production changes are delivered through reviewed Pull Requests and deployed through the Pipeline360 GitOps workflow.
 
 ---
 
-## Main Features
+## Related Repositories
+
+| Repository | Responsibility |
+|---|---|
+| [Pipeline360-Frontend](https://github.com/eli0504167101/Pipeline360-Frontend) | Frontend source, NGINX, Docker image and frontend CI |
+| [Pipeline360-Backend](https://github.com/eli0504167101/Pipeline360-Backend) | Node.js REST API and backend CI |
+| [Pipeline360-Infra](https://github.com/eli0504167101/Pipeline360-Infra) | Kubernetes manifests, Argo CD and GitOps deployment state |
+
+---
+
+## Features
 
 The frontend allows users to:
 
-- View available hotels
+- View hotels stored in MongoDB
 - View hotel details
-- Create a reservation
+- Create a new reservation
+- Enter full name and email address
+- Select check-in and check-out dates
 - Receive a unique reservation ID
-- Search for a reservation
-- Search by reservation ID, full name, or email
+- Search by reservation ID, full name or email address
 - Display reservation details
 - Cancel an existing reservation
 
@@ -27,26 +37,38 @@ The frontend allows users to:
 
 ## Technology Stack
 
-- HTML5
-- CSS3
-- JavaScript
-- NGINX
-- Docker
+| Area | Technology |
+|---|---|
+| Markup | HTML5 |
+| Styling | CSS3 |
+| Client logic | JavaScript |
+| Web server | NGINX |
+| Containerization | Docker |
+| CI/CD | GitHub Actions |
+| Container registry | Docker Hub |
+| Deployment | Kubernetes and Argo CD |
 
 ---
 
-## Project Structure
+## Repository Structure
 
 ```text
-frontend-repo/
+Pipeline360-Frontend/
+├── .github/
+│   └── workflows/
+│       └── ci.yaml
+│
 ├── src/
 │   ├── index.html
 │   ├── lookup.html
 │   ├── script.js
 │   ├── lookup-script.js
 │   └── style.css
+│
+├── .dockerignore
 ├── Dockerfile
 ├── nginx.conf
+├── package-lock.json
 ├── package.json
 └── README.md
 ```
@@ -55,7 +77,7 @@ frontend-repo/
 
 ## Application Pages
 
-### Reservation Page
+### New Reservation
 
 File:
 
@@ -65,13 +87,13 @@ src/index.html
 
 Responsibilities:
 
-- Load hotels from the backend
-- Display hotel details
-- Collect reservation information
+- Load the hotel list from the Backend
+- Display hotel information
+- Collect reservation details
 - Submit a reservation request
 - Display the generated reservation ID
 
-### Reservation Lookup Page
+### Reservation Lookup
 
 File:
 
@@ -83,62 +105,96 @@ Responsibilities:
 
 - Search by reservation ID
 - Search by full name
-- Search by email address
+- Search by email
 - Display reservation details
-- Cancel a reservation
+- Cancel an existing reservation
 
 ---
 
 ## API Communication
 
-The frontend uses relative API paths:
+The frontend uses relative API routes:
 
 ```text
-/api/reservations/hotels
-/api/reservations
-/api/reservations/lookup/{query}
-/api/reservations/{reservationId}
+GET    /api/reservations/hotels
+POST   /api/reservations
+GET    /api/reservations/lookup/{query}
+DELETE /api/reservations/{reservationId}
 ```
 
-NGINX proxies `/api` requests to the backend service.
-
-Current internal backend destination:
+NGINX proxies `/api/` requests to the Kubernetes Backend service:
 
 ```text
 backend-service.hotel-system.svc.cluster.local:3000
 ```
 
+Using relative routes allows the browser to access both the frontend and API through the same Ingress host.
+
 ---
 
-## NGINX Configuration
+## NGINX
 
 Configuration file:
 
 ```text
-frontend-repo/nginx.conf
+nginx.conf
 ```
 
-The configuration:
+Responsibilities:
 
-- Serves static files from `/usr/share/nginx/html`
-- Uses `index.html` as the default document
-- Proxies `/api/` requests to the backend
-- Preserves request headers
-- Supports direct access to application pages
+- Serve static files from `/usr/share/nginx/html`
+- Use `index.html` as the default page
+- Proxy `/api/` requests to the Backend
+- Forward request headers
+- Support direct access to application pages
 
 ---
 
-## Docker
+## Local Validation
 
-Dockerfile:
+Install dependencies:
 
-```text
-frontend-repo/Dockerfile
+```bash
+npm install
 ```
 
-The frontend image is built by GitHub Actions and pushed to Docker Hub.
+Run the frontend JavaScript validation:
 
-Image repository:
+```bash
+npm test
+```
+
+Build the Docker image from the repository root:
+
+```bash
+docker build \
+  -t pipeline360-frontend:local-validation \
+  .
+```
+
+Run locally:
+
+```bash
+docker run \
+  --rm \
+  -p 8080:80 \
+  pipeline360-frontend:local-validation
+```
+
+Open:
+
+```text
+http://127.0.0.1:8080
+```
+
+> [!NOTE]
+> API requests require access to the Backend. The full integrated application is normally tested through the Kubernetes Ingress.
+
+---
+
+## Docker Image
+
+Docker Hub repository:
 
 ```text
 eli0504167101/hotel-frontend
@@ -146,116 +202,155 @@ eli0504167101/hotel-frontend
 
 The workflow publishes:
 
-- A versioned image tag
-- The `latest` image tag
+```text
+frontend-N
+latest
+```
+
+Kubernetes deploys the immutable versioned tag:
+
+```text
+eli0504167101/hotel-frontend:frontend-N
+```
 
 ---
 
-## Kubernetes
+## GitHub Actions
 
-Deployment manifest:
-
-```text
-infra-repo/kubernetes/frontend/deployment.yaml
-```
-
-Service manifest:
+Workflow file:
 
 ```text
-infra-repo/kubernetes/frontend/service.yaml
+.github/workflows/ci.yaml
 ```
 
-Desired replica count:
+The current workflow is triggered by:
 
 ```text
-5
+Push to dev
+Pull Request to main
 ```
 
-Container port:
+The workflow performs three jobs:
+
+1. **Validate frontend**
+   - Install dependencies
+   - Run JavaScript validation
+   - Verify required files
+
+2. **Build and push frontend image**
+   - Generate a `frontend-N` tag
+   - Authenticate to Docker Hub
+   - Build and push the image
+   - Update `latest`
+
+3. **Open frontend deployment Pull Request**
+   - Check out `Pipeline360-Infra/main`
+   - Update only:
+     ```text
+     kubernetes/frontend/deployment.yaml
+     ```
+   - Create a deployment branch
+   - Open a Pull Request to `main`
+
+The workflow does not write directly to the Infrastructure `main` branch. The deployment Pull Request requires review and merge before Argo CD deploys the new image.
+
+---
+
+## Required GitHub Actions Secrets
+
+The repository requires:
 
 ```text
-80
+DOCKERHUB_USERNAME
+DOCKERHUB_TOKEN
+INFRA_REPO_TOKEN
 ```
 
-Readiness and liveness checks use:
+Responsibilities:
+
+| Secret | Purpose |
+|---|---|
+| `DOCKERHUB_USERNAME` | Docker Hub image owner |
+| `DOCKERHUB_TOKEN` | Docker Hub authentication |
+| `INFRA_REPO_TOKEN` | Create a branch and Pull Request in Pipeline360-Infra |
+
+> [!WARNING]
+> Never store real tokens, passwords or decoded Secret values inside the repository.
+
+---
+
+## Kubernetes Deployment
+
+The Frontend Kubernetes manifests are maintained in:
+
+```text
+Pipeline360-Infra/kubernetes/frontend/
+```
+
+Files:
+
+```text
+deployment.yaml
+service.yaml
+```
+
+Current desired state:
+
+```text
+Deployment: frontend-deployment
+Replicas: 5
+Service: frontend-service
+Service port: 80
+Container port: 80
+```
+
+The Deployment uses readiness and liveness checks against:
 
 ```text
 /index.html
+```
+
+Argo CD Application:
+
+```text
+pipeline360-frontend
+```
+
+Managed path:
+
+```text
+kubernetes/frontend
+```
+
+Git revision:
+
+```text
+main
 ```
 
 ---
 
 ## Ingress Access
 
-The frontend is exposed through the NGINX Ingress host:
-
-```text
-hotel.local
-```
-
-In the current Kind environment:
+The application is exposed through:
 
 ```text
 http://hotel.local:3000
 ```
 
-The Windows hosts file must contain:
+The Windows hosts file should contain:
 
 ```text
 127.0.0.1 hotel.local
 ```
 
----
-
-## Local Development
-
-The frontend is a static application and does not require a JavaScript build process.
-
-To inspect it locally, the recommended method is to build and run its Docker image or use the active Kubernetes deployment.
-
-Example Docker build:
-
-```bash
-docker build -t pipeline360-frontend:test frontend-repo
-```
-
-Example Docker run:
-
-```bash
-docker run --rm -p 8080:80 pipeline360-frontend:test
-```
-
-Then open:
+Windows hosts-file path:
 
 ```text
-http://127.0.0.1:8080
+C:\Windows\System32\drivers\etc\hosts
 ```
 
----
-
-## Verification
-
-Check the Kubernetes Deployment:
-
-```bash
-kubectl get deployment frontend-deployment -n hotel-system
-```
-
-Check frontend Pods:
-
-```bash
-kubectl get pods -n hotel-system -l app=frontend
-```
-
-Check the deployed image:
-
-```bash
-kubectl get deployment frontend-deployment \
-  -n hotel-system \
-  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
-```
-
-Check the page through Ingress:
+Check the frontend:
 
 ```bash
 curl -I \
@@ -271,9 +366,185 @@ HTTP/1.1 200 OK
 
 ---
 
-## Related Documentation
+## Deployment Flow
 
-- `../README.md`
-- `../PIPELINE360_STARTUP_GUIDE.md`
-- `../backend-repo/README.md`
-- `../infra-repo/README.md`
+```text
+Developer
+   |
+   v
+Push to Pipeline360-Frontend/dev
+   |
+   v
+Frontend CI validation
+   |
+   v
+Docker image frontend-N
+   |
+   v
+Push to Docker Hub
+   |
+   v
+Automated PR to Pipeline360-Infra/main
+   |
+   v
+Review and merge
+   |
+   v
+Argo CD detects manifest update
+   |
+   v
+Kubernetes RollingUpdate
+   |
+   v
+5 Ready frontend replicas
+```
+
+---
+
+## Verification
+
+Check the Argo CD Application:
+
+```bash
+kubectl get application pipeline360-frontend \
+  -n argocd \
+  -o custom-columns='SYNC:.status.sync.status,HEALTH:.status.health.status,REVISION:.status.sync.revision'
+```
+
+Check the Deployment:
+
+```bash
+kubectl get deployment frontend-deployment \
+  -n hotel-system
+```
+
+Check the Pods:
+
+```bash
+kubectl get pods \
+  -n hotel-system \
+  -l app=frontend
+```
+
+Check the active image:
+
+```bash
+kubectl get deployment frontend-deployment \
+  -n hotel-system \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+```
+
+Monitor the rollout:
+
+```bash
+kubectl rollout status \
+  deployment/frontend-deployment \
+  -n hotel-system \
+  --timeout=180s
+```
+
+> [!NOTE]
+> `kubectl rollout status` only monitors the rollout. It does not start a deployment.
+
+---
+
+## Git Workflow
+
+Work only on `dev`:
+
+```bash
+git switch dev
+git pull --ff-only origin dev
+git status
+```
+
+Commit intended files:
+
+```bash
+git add <specific-files>
+git commit -m "Describe the frontend change"
+git push origin dev
+```
+
+After a Pull Request is merged:
+
+```bash
+git fetch origin --prune
+git merge --ff-only origin/main
+git push origin dev
+```
+
+Verify branch synchronization:
+
+```bash
+git rev-list \
+  --left-right \
+  --count \
+  origin/main...origin/dev
+```
+
+Expected:
+
+```text
+0  0
+```
+
+---
+
+## Troubleshooting
+
+### New image exists but the browser shows old content
+
+Check the deployed image:
+
+```bash
+kubectl get deployment frontend-deployment \
+  -n hotel-system \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+```
+
+If the new image is active, perform a hard browser refresh:
+
+```text
+Ctrl + F5
+```
+
+Or open a private browsing window.
+
+### Argo CD has not detected a merged manifest change
+
+Normally Argo CD detects the change automatically. For troubleshooting only:
+
+```bash
+kubectl annotate application pipeline360-frontend \
+  -n argocd \
+  argocd.argoproj.io/refresh=hard \
+  --overwrite
+```
+
+### Verify the CSS inside the running container
+
+```bash
+kubectl exec \
+  -n hotel-system \
+  deployment/frontend-deployment \
+  -- grep -n 'input\[type="date"\]' \
+  /usr/share/nginx/html/style.css
+```
+
+---
+
+## Documentation
+
+Project architecture and Infrastructure documentation are maintained in:
+
+- [Pipeline360-Infra](https://github.com/eli0504167101/Pipeline360-Infra)
+- [Pipeline360-Backend](https://github.com/eli0504167101/Pipeline360-Backend)
+
+---
+
+## Author
+
+**Eli Hildesheim**
+
+DevOps Final Project — Pipeline360
