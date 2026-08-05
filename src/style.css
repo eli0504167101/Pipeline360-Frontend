@@ -240,3 +240,11 @@ button:active {
     border: 1px solid #efb8b2;
     color: #a93226;
 }
+.form-group {
+    direction: rtl;
+}
+
+.form-group input[type="date"] {
+    direction: ltr;
+    text-align: left;
+}
