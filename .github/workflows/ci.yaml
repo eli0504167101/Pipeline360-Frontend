@@ -4,16 +4,17 @@ on:
   push:
     branches:
       - dev
+    paths-ignore:
+      - README.md
+      - docs/**
+      - LICENSE
+      
   pull_request:
     branches:
       - main
 
 permissions:
   contents: read
-
-env:
-  INFRA_REPOSITORY: eli0504167101/Pipeline360-Infra
-  FRONTEND_MANIFEST: kubernetes/frontend/deployment.yaml
 
 jobs:
   validate:
@@ -103,110 +104,3 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/hotel-frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  update-infra:
-    name: Open frontend deployment pull request
-    needs:
-      - build-and-push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout infrastructure repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.INFRA_REPOSITORY }}
-          ref: main
-          token: ${{ secrets.INFRA_REPO_TOKEN }}
-          fetch-depth: 0
-
-      - name: Validate frontend manifest
-        run: |
-          set -euo pipefail
-
-          if [ ! -f "${FRONTEND_MANIFEST}" ]; then
-            echo "Frontend manifest was not found: ${FRONTEND_MANIFEST}"
-            exit 1
-          fi
-
-          IMAGE_LINES="$(grep -c 'image: .*hotel-frontend:' "${FRONTEND_MANIFEST}")"
-
-          if [ "${IMAGE_LINES}" -ne 1 ]; then
-            echo "Expected exactly one hotel-frontend image line, found: ${IMAGE_LINES}"
-            exit 1
-          fi
-
-          echo "Current frontend image:"
-          grep -n 'image: .*hotel-frontend:' "${FRONTEND_MANIFEST}"
-
-      - name: Update frontend image tag
-        env:
-          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-        run: |
-          set -euo pipefail
-
-          sed -i \
-            "s|image: .*hotel-frontend:.*|image: ${DOCKERHUB_USERNAME}/hotel-frontend:${IMAGE_TAG}|" \
-            "${FRONTEND_MANIFEST}"
-
-          echo "Updated frontend image:"
-          grep -n 'image: .*hotel-frontend:' "${FRONTEND_MANIFEST}"
-
-          if ! grep -q \
-            "image: ${DOCKERHUB_USERNAME}/hotel-frontend:${IMAGE_TAG}" \
-            "${FRONTEND_MANIFEST}"; then
-            echo "Frontend image tag update failed."
-            exit 1
-          fi
-
-      - name: Create deployment branch
-        id: deployment
-        env:
-          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
-        run: |
-          set -euo pipefail
-
-          BRANCH_NAME="deployment/frontend-${GITHUB_RUN_ID}"
-
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add "${FRONTEND_MANIFEST}"
-
-          if git diff --cached --quiet; then
-            echo "No frontend manifest change detected."
-            echo "changes=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          git switch -c "${BRANCH_NAME}"
-          git commit -m "Update frontend image to ${IMAGE_TAG}"
-          git push --set-upstream origin "${BRANCH_NAME}"
-
-          echo "changes=true" >> "$GITHUB_OUTPUT"
-          echo "branch_name=${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
-
-      - name: Open pull request to main
-        if: steps.deployment.outputs.changes == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.INFRA_REPO_TOKEN }}
-          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
-          BRANCH_NAME: ${{ steps.deployment.outputs.branch_name }}
-        run: |
-          set -euo pipefail
-
-          gh pr create \
-            --repo "${INFRA_REPOSITORY}" \
-            --base main \
-            --head "${BRANCH_NAME}" \
-            --title "Deploy frontend image ${IMAGE_TAG}" \
-            --body "Automated frontend deployment preparation.
-
-          - Image: \`${{ secrets.DOCKERHUB_USERNAME }}/hotel-frontend:${IMAGE_TAG}\`
-          - Source repository: \`${GITHUB_REPOSITORY}\`
-          - Source commit: \`${GITHUB_SHA}\`
-          - Source workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
-
-          This pull request requires review and approval before merge."
