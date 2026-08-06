@@ -56,7 +56,8 @@ The frontend allows users to:
 Pipeline360-Frontend/
 ├── .github/
 │   └── workflows/
-│       └── ci.yaml
+│       ├── ci.yaml
+│       └── deployment-preparation.yaml
 │
 ├── src/
 │   ├── index.html
@@ -215,22 +216,150 @@ eli0504167101/hotel-frontend:frontend-N
 
 ---
 
+
+
 ## GitHub Actions
 
-Workflow file:
+The frontend repository uses **two independent GitHub Actions pipelines**.
+
+This implementation follows the project requirement that the deployment preparation pipeline starts **only after** the build pipeline has completed successfully.
+
+---
+
+### Pipeline 1 – Frontend CI
+
+Workflow:
 
 ```text
 .github/workflows/ci.yaml
 ```
 
-The current workflow is triggered by:
+Trigger:
 
 ```text
-Push to dev
-Pull Request to main
+Push → dev branch
 ```
 
-The workflow performs three jobs:
+Responsibilities:
+
+1. Validate the frontend source code
+2. Install project dependencies
+3. Execute frontend validation
+4. Build the Docker image
+5. Push two Docker tags to Docker Hub
+
+```text
+frontend-N
+latest
+```
+
+The Docker image is immutable and identified by the GitHub Actions run number.
+
+---
+
+### Pipeline 2 – Frontend Deployment Preparation
+
+Workflow:
+
+```text
+.github/workflows/deployment-preparation.yaml
+```
+
+Trigger:
+
+```text
+Automatically after a successful Frontend CI workflow
+```
+
+Responsibilities:
+
+1. Calculate the matching Docker image tag
+
+```text
+frontend-N
+```
+
+2. Checkout the Pipeline360-Infra repository
+
+3. Update only:
+
+```text
+kubernetes/frontend/deployment.yaml
+```
+
+4. Create a deployment branch
+
+```text
+deployment/frontend-<workflow-run-id>
+```
+
+5. Commit the manifest update
+
+6. Push the deployment branch
+
+7. Open a Pull Request to:
+
+```text
+Pipeline360-Infra/main
+```
+
+No deployment is performed directly from this repository.
+
+The Infrastructure repository remains the single source of truth for Kubernetes manifests.
+
+Argo CD deploys the new version only after the Infrastructure Pull Request has been reviewed and merged.
+
+---
+
+### Complete Deployment Flow
+
+```text
+Developer
+      │
+      ▼
+Push to Frontend/dev
+      │
+      ▼
+Pipeline 1
+Frontend CI
+      │
+      ▼
+Validate
+      │
+      ▼
+Build Docker Image
+      │
+      ▼
+Push frontend-N
+      │
+      ▼
+Pipeline 2
+Frontend Deployment Preparation
+      │
+      ▼
+Update Pipeline360-Infra
+      │
+      ▼
+Create Deployment Branch
+      │
+      ▼
+Open Pull Request
+      │
+      ▼
+Review & Approval
+      │
+      ▼
+Merge into main
+      │
+      ▼
+Argo CD detects the manifest change
+      │
+      ▼
+Rolling Update
+      │
+      ▼
+5 Running Frontend Pods
+```
 
 1. **Validate frontend**
    - Install dependencies
@@ -370,33 +499,48 @@ HTTP/1.1 200 OK
 
 ```text
 Developer
-   |
-   v
-Push to Pipeline360-Frontend/dev
-   |
-   v
-Frontend CI validation
-   |
-   v
-Docker image frontend-N
-   |
-   v
-Push to Docker Hub
-   |
-   v
-Automated PR to Pipeline360-Infra/main
-   |
-   v
-Review and merge
-   |
-   v
-Argo CD detects manifest update
-   |
-   v
-Kubernetes RollingUpdate
-   |
-   v
-5 Ready frontend replicas
+      │
+      ▼
+Push to dev
+      │
+      ▼
+Frontend CI
+      │
+      ▼
+Validate
+      │
+      ▼
+Build Docker Image
+      │
+      ▼
+Push frontend-N
+      │
+      ▼
+Frontend Deployment Preparation
+      │
+      ▼
+Update Pipeline360-Infra
+      │
+      ▼
+Create Deployment Branch
+      │
+      ▼
+Open Pull Request
+      │
+      ▼
+Review and Approval
+      │
+      ▼
+Merge into main
+      │
+      ▼
+Argo CD detects the new manifest
+      │
+      ▼
+Rolling Update
+      │
+      ▼
+Frontend Deployment
 ```
 
 ---
