@@ -11,18 +11,21 @@ body {
 }
 
 .site-header {
-    height: 100px;
-    padding: 12px 24px;
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 1;
+    padding: max(24px, env(safe-area-inset-top)) 20px 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    mix-blend-mode: multiply;
 }
 
 .brand {
     display: block;
     position: relative;
-    width: 260px;
-    height: 76px;
+    width: min(360px, 75vw);
+    aspect-ratio: 260 / 76;
     overflow: hidden;
     flex-shrink: 0;
     margin: 0;
@@ -30,7 +33,7 @@ body {
 
 .brand img {
     position: absolute;
-    width: 310px;
+    width: 119.23%;
     height: auto;
     max-width: none;
     top: 50%;
@@ -40,7 +43,7 @@ body {
 
 .hotel-home {
     position: relative;
-    height: calc(100svh - 100px);
+    height: 100svh;
     min-height: 360px;
     background: #e2f1f7;
 }
@@ -61,8 +64,6 @@ body {
     gap: 16px;
 }
 .home-actions button { min-height: 56px; box-shadow: 0 3px 16px #0003; }
-.home-actions .secondary-action { background: #fff; color: #243d36; border: 1px solid #27785c; }
-.home-actions .secondary-action:hover { background: #edf7ef; }
 dialog {
     width: min(520px, calc(100% - 32px));
     max-height: calc(100svh - 32px);
