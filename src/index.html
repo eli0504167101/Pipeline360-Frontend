@@ -9,19 +9,21 @@
 </head>
 <body>
     <header class="site-header">
-        <a class="brand" href="index.html#booking" aria-label="perfecTors - הזמנת מלון"><img src="perfectors-logo.png" width="1774" height="887" alt="perfecTors"></a>
-        <nav class="top-nav" aria-label="ניווט ראשי">
-            <a href="#booking" aria-current="page">הזמנה חדשה</a>
-            <a href="lookup.html">חיפוש וביטול הזמנה</a>
-        </nav>
+        <h1 class="brand"><img src="perfectors-logo.png" width="1774" height="887" alt="perfecTors"></h1>
     </header>
-    <div class="hotel-banner">
+    <main class="hotel-home">
         <img src="hotel-garden.png" width="1774" height="887" alt="איור של מלון לבן מוקף עצים ירוקים, מרפסות פורחות וגינה צבעונית" fetchpriority="high">
-    </div>
+        <div class="home-actions">
+            <button type="button" data-dialog="booking" aria-haspopup="dialog">יצירת הזמנה חדשה</button>
+            <button type="button" data-dialog="lookup" aria-haspopup="dialog" class="secondary-action">חיפוש הזמנה קיימת</button>
+        </div>
+    </main>
 
-    <main class="page-container" id="booking" tabindex="-1">
-        <section class="card">
-            <h1>הזמנת מלון חדשה</h1>
+    <dialog id="booking" aria-labelledby="booking-title">
+        <div class="dialog-heading">
+            <h2 id="booking-title">יצירת הזמנה חדשה</h2>
+            <button type="button" class="close-dialog" aria-label="סגירת חלונית" title="סגירה">&#215;</button>
+        </div>
 
             <form id="reservationForm">
                 <label for="fullName">שם מלא</label>
@@ -46,10 +48,24 @@
                 <button type="submit">בצע הזמנה</button>
             </form>
 
-            <div id="reservationResult"></div>
-        </section>
-    </main>
+            <div id="reservationResult" aria-live="polite"></div>
+    </dialog>
+
+    <dialog id="lookup" aria-labelledby="lookup-title">
+        <div class="dialog-heading">
+            <h2 id="lookup-title">חיפוש הזמנה קיימת</h2>
+            <button type="button" class="close-dialog" aria-label="סגירת חלונית" title="סגירה">&#215;</button>
+        </div>
+        <form id="lookupForm">
+            <label for="lookupQuery">מספר הזמנה, שם מלא או אימייל</label>
+            <input type="text" id="lookupQuery" name="lookupQuery" autocomplete="off" required>
+            <button type="submit">חיפוש הזמנה</button>
+        </form>
+        <div id="lookupResult" aria-live="polite"></div>
+    </dialog>
 
     <script src="script.js"></script>
+    <script src="lookup-script.js"></script>
+    <script src="dialogs.js"></script>
 </body>
 </html>

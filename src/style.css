@@ -11,13 +11,11 @@ body {
 }
 
 .site-header {
-    max-width: 1120px;
-    margin: auto;
-    padding: 20px 32px;
+    height: 100px;
+    padding: 12px 24px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 24px;
+    justify-content: center;
 }
 
 .brand {
@@ -27,6 +25,7 @@ body {
     height: 76px;
     overflow: hidden;
     flex-shrink: 0;
+    margin: 0;
 }
 
 .brand img {
@@ -39,36 +38,57 @@ body {
     transform: translate(-50%, -50%);
 }
 
-.top-nav { display: flex; gap: 24px; flex-wrap: wrap; }
-.top-nav a {
-    color: #536760;
-    text-decoration: none;
-    padding: 8px 0;
-    border-bottom: 2px solid transparent;
-    font-size: 15px;
-}
-.top-nav a:hover, .top-nav a[aria-current="page"] {
-    color: #24694f;
-    border-bottom-color: #27785c;
-}
-
-.hotel-banner {
+.hotel-home {
+    position: relative;
+    height: calc(100svh - 100px);
+    min-height: 360px;
     background: #e2f1f7;
-    border-bottom: 4px solid #d4e5d6;
 }
-.hotel-banner img {
+.hotel-home > img {
     display: block;
     width: 100%;
-    height: auto;
-    max-width: 600px;
-    margin: auto;
+    height: 100%;
+    object-fit: cover;
+    object-position: 60% center;
 }
-
-.page-container { padding: 32px 24px 56px; }
-#booking { scroll-margin-top: 16px; }
-.card { width: 100%; max-width: 480px; margin: auto; }
-.card h1 { margin: 0 0 24px; font-size: 26px; text-align: right; }
-.page-description { margin: 0 0 24px; color: #536760; }
+.home-actions {
+    position: absolute;
+    bottom: max(32px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(600px, calc(100% - 40px));
+    display: flex;
+    gap: 16px;
+}
+.home-actions button { min-height: 56px; box-shadow: 0 3px 16px #0003; }
+.home-actions .secondary-action { background: #fff; color: #243d36; border: 1px solid #27785c; }
+.home-actions .secondary-action:hover { background: #edf7ef; }
+dialog {
+    width: min(520px, calc(100% - 32px));
+    max-height: calc(100svh - 32px);
+    padding: 24px;
+    border: 0;
+    border-radius: 8px;
+    color: #243d36;
+    background: #fff;
+    box-shadow: 0 16px 64px #0004;
+    overflow-y: auto;
+}
+dialog::backdrop { background: #152d2866; }
+body:has(dialog[open]) { overflow: hidden; }
+.dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.dialog-heading h2 { font-size: 24px; margin: 0; }
+.dialog-heading .close-dialog {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    font-size: 28px;
+    background: #f0f4f2;
+    color: #243d36;
+}
+.dialog-heading .close-dialog:hover { background: #dde9e3; }
 
 form { display: flex; flex-direction: column; gap: 12px; }
 label { font-size: 14px; font-weight: bold; margin-bottom: -6px; }
@@ -111,9 +131,7 @@ select:disabled, button:disabled { opacity: 0.6; cursor: not-allowed; }
 #cancelBtn:hover, .cancel-button:hover { background: #852f43; }
 
 @media (max-width: 600px) {
-    .site-header { flex-direction: column; padding: 14px 20px; gap: 6px; }
-    .top-nav { gap: 20px; justify-content: center; }
-    .top-nav a { font-size: 14px; }
-    .page-container { padding: 24px 20px 40px; }
-    .card h1 { font-size: 24px; }
+    .home-actions { flex-direction: column; gap: 12px; bottom: max(24px, env(safe-area-inset-bottom)); }
+    dialog { padding: 20px; }
+    .dialog-heading h2 { font-size: 21px; }
 }

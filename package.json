@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Pipeline360 static frontend service",
   "scripts": {
-    "check": "node --check src/script.js && node --check src/lookup-script.js",
+    "check": "node --check src/script.js && node --check src/lookup-script.js && node --check src/dialogs.js",
     "test": "npm run check",
     "start": "echo \"The frontend is served by NGINX\""
   },
