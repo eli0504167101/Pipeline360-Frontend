@@ -21,16 +21,23 @@ body {
 }
 
 .brand {
-    color: #243d36;
-    font-family: Georgia, serif;
-    font-size: 36px;
-    font-weight: bold;
-    text-decoration: none;
-    white-space: nowrap;
+    display: block;
+    position: relative;
+    width: 260px;
+    height: 76px;
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
-.brand span { color: #27785c; }
-.brand .brand-dot { color: #ce6176; }
+.brand img {
+    position: absolute;
+    width: 310px;
+    height: auto;
+    max-width: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
 
 .top-nav { display: flex; gap: 24px; flex-wrap: wrap; }
 .top-nav a {
@@ -53,11 +60,12 @@ body {
     display: block;
     width: 100%;
     height: auto;
-    max-width: 840px;
+    max-width: 600px;
     margin: auto;
 }
 
 .page-container { padding: 32px 24px 56px; }
+#booking { scroll-margin-top: 16px; }
 .card { width: 100%; max-width: 480px; margin: auto; }
 .card h1 { margin: 0 0 24px; font-size: 26px; text-align: right; }
 .page-description { margin: 0 0 24px; color: #536760; }
@@ -104,7 +112,6 @@ select:disabled, button:disabled { opacity: 0.6; cursor: not-allowed; }
 
 @media (max-width: 600px) {
     .site-header { flex-direction: column; padding: 14px 20px; gap: 6px; }
-    .brand { font-size: 32px; }
     .top-nav { gap: 20px; justify-content: center; }
     .top-nav a { font-size: 14px; }
     .page-container { padding: 24px 20px 40px; }
