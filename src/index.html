@@ -3,22 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>הזמנת מלון</title>
+    <title>perfecTors | הזמנת מלון</title>
  
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <nav class="top-nav">
-       <a href="lookup.html">חיפוש וביטול הזמנה </a>
-   </nav>
+    <header class="site-header">
+        <a class="brand" href="index.html" dir="ltr" aria-label="perfecTors - הזמנת מלון">perfec<span>T</span>ors<span class="brand-dot" aria-hidden="true">.</span></a>
+        <nav class="top-nav" aria-label="ניווט ראשי">
+            <a href="index.html" aria-current="page">הזמנה חדשה</a>
+            <a href="lookup.html">חיפוש וביטול הזמנה</a>
+        </nav>
+    </header>
+    <div class="hotel-banner">
+        <img src="hotel-garden.png" width="1774" height="887" alt="איור של מלון לבן מוקף עצים ירוקים, מרפסות פורחות וגינה צבעונית" fetchpriority="high">
+    </div>
 
     <main class="page-container">
         <section class="card">
             <h1>הזמנת מלון חדשה</h1>
 
             <form id="reservationForm">
-                <input type="text" id="fullName" placeholder="שם מלא" required>
-                <input type="email" id="email" placeholder="כתובת אימייל" required>
+                <label for="fullName">שם מלא</label>
+                <input type="text" id="fullName" placeholder="שם מלא" autocomplete="name" required>
+                <label for="email">כתובת אימייל</label>
+                <input type="email" id="email" placeholder="כתובת אימייל" autocomplete="email" required>
 
                 <label for="checkIn">תאריך כניסה</label>
                 <input type="date" id="checkIn" required>
