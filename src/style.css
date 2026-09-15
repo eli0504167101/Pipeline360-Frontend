@@ -14,7 +14,7 @@ body {
     position: absolute;
     inset: 0 0 auto;
     z-index: 1;
-    padding: max(8dvh, env(safe-area-inset-top)) 20px 0;
+    padding: max(7dvh, env(safe-area-inset-top)) 20px 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -24,7 +24,7 @@ body {
 .brand {
     display: block;
     position: relative;
-    width: min(330px, 24vw);
+    width: min(430px, 30vw);
     aspect-ratio: 260 / 76;
     overflow: hidden;
     flex-shrink: 0;
@@ -43,7 +43,9 @@ body {
 
 .hotel-home {
     position: relative;
-    height: 100dvh;
+    height: 100svh;
+    min-height: 100dvh;
+    overflow: hidden;
     background: #e2f1f7;
 }
 .hotel-home > img {
@@ -55,18 +57,23 @@ body {
 }
 .home-actions {
     position: absolute;
-    top: 52%;
+    top: 62%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: min(720px, 50vw);
+    width: max-content;
+    max-width: calc(100% - 40px);
     display: flex;
-    gap: min(10vw, 140px);
+    align-items: center;
+    justify-content: center;
+    gap: clamp(24px, 4vw, 64px);
 }
 .home-actions button {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 14px;
+    width: clamp(220px, 18vw, 280px);
+    flex: 0 1 280px;
     min-height: 64px;
     padding: 14px 18px;
     border: 1px solid #d0e9d6;
@@ -146,6 +153,7 @@ select:disabled, button:disabled { opacity: 0.6; cursor: not-allowed; }
 @media (max-width: 600px) {
     .brand { width: min(280px, 70vw); }
     .home-actions { width: min(340px, calc(100% - 40px)); flex-direction: column; gap: 16px; }
+    .home-actions button { width: 100%; flex-basis: auto; }
     dialog { padding: 20px; }
     .dialog-heading h2 { font-size: 21px; }
 }
