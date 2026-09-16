@@ -34,8 +34,7 @@ body {
     width: 100%;
     height: auto;
     object-fit: contain;
-    mix-blend-mode: multiply;
-    filter: drop-shadow(0 2px 3px rgb(255 255 255 / 0.45));
+    filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.18));
 }
 
 .hotel-home {
