@@ -1,6 +1,6 @@
 * { box-sizing: border-box; }
 
-html, body { margin: 0; min-height: 100%; }
+html, body { margin: 0; width: 100%; min-height: 100%; }
 
 body {
     font-family: Arial, sans-serif;
@@ -14,37 +14,35 @@ body {
     position: absolute;
     inset: 0 0 auto;
     z-index: 1;
-    padding: max(7dvh, env(safe-area-inset-top)) 20px 0;
+    padding: max(clamp(18px, 3.5vh, 38px), env(safe-area-inset-top)) 20px 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    mix-blend-mode: multiply;
+    pointer-events: none;
 }
 
 .brand {
     display: block;
-    position: relative;
-    width: min(430px, 30vw);
-    aspect-ratio: 260 / 76;
-    overflow: hidden;
+    width: clamp(280px, 31vw, 460px);
+    max-width: calc(100vw - 40px);
     flex-shrink: 0;
     margin: 0;
 }
 
 .brand img {
-    position: absolute;
-    width: 119.23%;
+    display: block;
+    width: 100%;
     height: auto;
-    max-width: none;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    object-fit: contain;
+    mix-blend-mode: multiply;
+    filter: drop-shadow(0 2px 3px rgb(255 255 255 / 0.45));
 }
 
 .hotel-home {
     position: relative;
-    height: 100svh;
-    min-height: 100dvh;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     background: #e2f1f7;
 }
@@ -57,31 +55,42 @@ body {
 }
 .home-actions {
     position: absolute;
-    top: 62%;
+    top: 56%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: max-content;
-    max-width: calc(100% - 40px);
+    width: min(620px, calc(100% - 40px));
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(24px, 4vw, 64px);
+    gap: clamp(20px, 3vw, 44px);
 }
 .home-actions button {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 14px;
-    width: clamp(220px, 18vw, 280px);
-    flex: 0 1 280px;
-    min-height: 64px;
+    width: clamp(220px, 18vw, 270px);
+    height: clamp(58px, 6.5vh, 66px);
+    flex: 0 1 270px;
+    min-height: 58px;
     padding: 14px 18px;
     border: 1px solid #d0e9d6;
     border-radius: 18px;
     background: #176347;
     box-shadow: 0 4px 16px #173a2833;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
-.home-actions button:hover { background: #104f38; }
+.home-actions button:hover {
+    background: #104f38;
+    box-shadow: 0 7px 20px #173a2847;
+    transform: translateY(-2px);
+}
+.home-actions button:focus-visible {
+    outline: 3px solid #f7fff9;
+    outline-offset: 4px;
+    box-shadow: 0 0 0 6px #17634799, 0 7px 20px #173a2847;
+}
+.home-actions button:active { transform: translateY(0); }
 .home-actions button svg { flex: 0 0 24px; }
 dialog {
     width: min(520px, calc(100% - 32px));
@@ -151,14 +160,26 @@ select:disabled, button:disabled { opacity: 0.6; cursor: not-allowed; }
 #cancelBtn:hover, .cancel-button:hover { background: #852f43; }
 
 @media (max-width: 600px) {
-    .brand { width: min(280px, 70vw); }
-    .home-actions { width: min(340px, calc(100% - 40px)); flex-direction: column; gap: 16px; }
-    .home-actions button { width: 100%; flex-basis: auto; }
+    .site-header { padding-top: max(clamp(14px, 2.5vh, 24px), env(safe-area-inset-top)); }
+    .brand { width: min(300px, calc(100vw - 32px)); }
+    .hotel-home > img { object-position: 58% center; }
+    .home-actions {
+        top: 58%;
+        width: min(320px, calc(100% - 40px));
+        flex-direction: column;
+        gap: 14px;
+    }
+    .home-actions button { width: 100%; height: 58px; flex-basis: auto; }
     dialog { padding: 20px; }
     .dialog-heading h2 { font-size: 21px; }
 }
 
 @media (min-width: 601px) and (max-width: 1100px) {
-    .home-actions { width: 64vw; gap: 6vw; }
-    .home-actions button { min-height: 56px; gap: 10px; padding: 12px; }
+    .brand { width: clamp(300px, 42vw, 400px); }
+    .home-actions { width: min(580px, calc(100% - 48px)); }
+    .home-actions button { gap: 10px; padding: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-actions button { transition: none; }
 }
