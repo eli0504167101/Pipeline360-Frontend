@@ -29,6 +29,16 @@ The complete platform architecture, Kubernetes manifests, GitOps workflow and Ar
 
 ---
 
+## Authentication and coordinated release
+
+The client supports registration, login, logout and HttpOnly cookie-based sessions.
+Reservation creation, lookup and cancellation require authentication; hotel browsing
+remains public. See [Frontend Authentication](docs/frontend-authentication.md) for
+API contracts, tests, security behavior and the required coordinated rollout.
+
+**Do not deploy this client or the ownership Backend independently.** Infrastructure
+PRs #50, #51 and #52 remain pending separate release approval.
+
 ## Features
 
 The frontend allows users to:
@@ -180,7 +190,8 @@ eli0504167101/hotel-frontend:frontend-14
 Install dependencies:
 
 ```bash
-npm install
+npm ci
+npx playwright install --with-deps chromium
 ```
 
 Run frontend validation:
@@ -537,6 +548,10 @@ This ensures that every deployment is:
 
 ## Rolling Update
 
+The authentication/ownership release requires the traffic block and coordinated
+cutover in [Frontend Authentication](docs/frontend-authentication.md). The generic
+rolling update diagram below does not establish safety for incompatible versions.
+
 Frontend deployments use the default Kubernetes RollingUpdate strategy.
 
 Benefits include:
@@ -709,8 +724,8 @@ Development follows a Git Flow strategy using two long-lived branches.
 Development process:
 
 ```bash
-git switch dev
-git pull --ff-only origin dev
+git fetch origin --prune
+git switch -c feature/frontend-authentication origin/dev
 git status
 ```
 
@@ -721,10 +736,11 @@ git add <specific-files>
 
 git commit -m "Describe the frontend change"
 
-git push origin dev
+git push --set-upstream origin feature/frontend-authentication
 ```
 
-After the automated CI workflow completes:
+Open a Draft PR targeting `dev`; do not push feature changes directly to `dev`.
+Only after separate merge approval and the automated CI workflow completes:
 
 1. The Docker image is published.
 2. A deployment Pull Request is created automatically in **Pipeline360-Infra**.

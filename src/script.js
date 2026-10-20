@@ -2,127 +2,61 @@ const reservationForm = document.getElementById('reservationForm');
 const hotelSelect = document.getElementById('hotelSelect');
 const hotelDetails = document.getElementById('hotelDetails');
 const reservationResult = document.getElementById('reservationResult');
-
 let hotels = [];
 
 async function loadHotels() {
     try {
-        const response = await fetch('/api/reservations/hotels');
-
-        if (!response.ok) {
-            throw new Error('Failed to load hotels');
-        }
-
-        hotels = await response.json();
-
-        hotelSelect.innerHTML = '<option value="">בחר מלון</option>';
-
-        if (hotels.length === 0) {
-            hotelSelect.innerHTML =
-                '<option value="">לא נמצאו מלונות</option>';
-            hotelSelect.disabled = true;
-            return;
-        }
-
-        hotels.forEach((hotel) => {
-            const option = document.createElement('option');
-
-            option.value = hotel.hotelId;
-            option.textContent =
-                `${hotel.hotelName} - ${hotel.location} - ₪${hotel.pricePerNight} ללילה`;
-
-            hotelSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Hotel loading error:', error);
-
-        hotelSelect.innerHTML =
-            '<option value="">שגיאה בטעינת המלונות</option>';
-
+        hotels = await PipelineAPI.request('/api/reservations/hotels', { protectedRequest: false });
+        hotelSelect.replaceChildren(new Option(hotels.length ? 'בחר מלון' : 'לא נמצאו מלונות', ''));
+        hotelSelect.disabled = hotels.length === 0;
+        hotels.forEach(hotel => hotelSelect.append(new Option(
+            `${hotel.hotelName} - ${hotel.location} - ₪${hotel.pricePerNight} ללילה`, hotel.hotelId)));
+    } catch {
+        hotelSelect.replaceChildren(new Option('שגיאה בטעינת המלונות', ''));
         hotelSelect.disabled = true;
     }
 }
-
 hotelSelect.addEventListener('change', () => {
-    const selectedHotel = hotels.find(
-        (hotel) => hotel.hotelId === hotelSelect.value
-    );
-
-    if (!selectedHotel) {
-        hotelDetails.innerHTML = '';
-        return;
-    }
-
-    hotelDetails.innerHTML = `
-        <div class="hotel-details">
-            <h3>${selectedHotel.hotelName}</h3>
-            <p>${selectedHotel.description}</p>
-            <p><strong>מיקום:</strong> ${selectedHotel.location}</p>
-            <p><strong>מחיר ללילה:</strong> ₪${selectedHotel.pricePerNight}</p>
-        </div>
-    `;
+    hotelDetails.replaceChildren();
+    const hotel = hotels.find(item => item.hotelId === hotelSelect.value);
+    if (!hotel) return;
+    const details = document.createElement('div');
+    details.className = 'hotel-details';
+    const title = document.createElement('h3');
+    title.textContent = hotel.hotelName;
+    details.append(title);
+    UI.line(details, 'תיאור', hotel.description);
+    UI.line(details, 'מיקום', hotel.location);
+    UI.line(details, 'מחיר ללילה', `₪${hotel.pricePerNight}`);
+    hotelDetails.append(details);
 });
-
-reservationForm.addEventListener('submit', async (event) => {
+reservationForm.addEventListener('submit', async event => {
     event.preventDefault();
-
-    const reservationData = {
+    if (!PipelineAPI.user) { UI.message(reservationResult, 'יש להתחבר לפני יצירת הזמנה.'); return; }
+    const data = {
         fullName: document.getElementById('fullName').value.trim(),
         email: document.getElementById('email').value.trim(),
         checkIn: document.getElementById('checkIn').value,
         checkOut: document.getElementById('checkOut').value,
         hotelId: hotelSelect.value
     };
-
-    if (!reservationData.hotelId) {
-        reservationResult.innerHTML =
-            '<p class="error-message">יש לבחור מלון.</p>';
-        return;
+    if (!data.hotelId || data.checkOut <= data.checkIn) {
+        UI.message(reservationResult, 'בחרו מלון ותאריך יציאה מאוחר מתאריך הכניסה.'); return;
     }
-
-    if (reservationData.checkOut <= reservationData.checkIn) {
-        reservationResult.innerHTML =
-            '<p class="error-message">תאריך היציאה חייב להיות אחרי תאריך הכניסה.</p>';
-        return;
-    }
-
+    const button = reservationForm.querySelector('[type="submit"]');
+    const revision = PipelineAPI.revision;
+    button.disabled = true;
     try {
-        const response = await fetch('/api/reservations', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(reservationData)
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(
-                result.details ||
-                result.error ||
-                'Failed to create reservation'
-            );
-        }
-
-        reservationResult.innerHTML = `
-            <div class="success-message">
-                <strong>ההזמנה בוצעה בהצלחה</strong>
-                <p>מספר הזמנה: ${result.id}</p>
-            </div>
-        `;
-
+        const result = await PipelineAPI.request('/api/reservations', { method: 'POST', body: data });
+        if (revision !== PipelineAPI.revision) return;
+        UI.message(reservationResult, `ההזמנה בוצעה בהצלחה. מספר הזמנה: ${result.reservationId}`, 'success-message');
         reservationForm.reset();
-        hotelDetails.innerHTML = '';
+        hotelDetails.replaceChildren();
     } catch (error) {
-        console.error('Reservation error:', error);
-
-        reservationResult.innerHTML = `
-            <p class="error-message">
-                יצירת ההזמנה נכשלה: ${error.message}
-            </p>
-        `;
+        if (!error.stale && (revision === PipelineAPI.revision || error.sessionExpired)) {
+            UI.message(reservationResult, error.message);
+        }
     }
+    finally { button.disabled = false; }
 });
-
 loadHotels();
