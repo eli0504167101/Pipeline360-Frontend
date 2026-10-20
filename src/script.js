@@ -52,7 +52,11 @@ reservationForm.addEventListener('submit', async event => {
         UI.message(reservationResult, `ההזמנה בוצעה בהצלחה. מספר הזמנה: ${result.reservationId}`, 'success-message');
         reservationForm.reset();
         hotelDetails.replaceChildren();
-    } catch (error) { UI.message(reservationResult, error.message); }
+    } catch (error) {
+        if (!error.stale && (revision === PipelineAPI.revision || error.sessionExpired)) {
+            UI.message(reservationResult, error.message);
+        }
+    }
     finally { button.disabled = false; }
 });
 loadHotels();

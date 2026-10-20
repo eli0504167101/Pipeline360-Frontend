@@ -30,12 +30,12 @@ lookupForm.addEventListener('submit', async event => {
                 await PipelineAPI.request(`/api/reservations/${encodeURIComponent(data.reservationId)}`, { method: 'DELETE', body: {} });
                 if (sequence === lookupSequence) UI.message(lookupResult, `ההזמנה ${data.reservationId} בוטלה בהצלחה.`, 'success-message');
             } catch (error) {
-                if (sequence === lookupSequence || (error.status === 401 && !PipelineAPI.user)) UI.message(lookupResult, error.message);
+                if (!error.stale && (sequence === lookupSequence || error.sessionExpired)) UI.message(lookupResult, error.message);
             } finally { button.disabled = false; }
         });
         details.append(button);
         lookupResult.replaceChildren(details);
     } catch (error) {
-        if (sequence === lookupSequence || (error.status === 401 && !PipelineAPI.user)) UI.message(lookupResult, error.message);
+        if (!error.stale && (sequence === lookupSequence || error.sessionExpired)) UI.message(lookupResult, error.message);
     }
 });

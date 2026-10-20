@@ -4,8 +4,14 @@ window.PipelineAPI = (() => {
     let csrf = null;
     let revision = 0;
     class APIError extends Error {
-        constructor(status, message) { super(message); this.status = status; }
+        constructor(status, message, { stale = false, sessionExpired = false } = {}) {
+            super(message);
+            this.status = status;
+            this.stale = stale;
+            this.sessionExpired = sessionExpired;
+        }
     }
+    const staleResponse = () => new APIError(409, 'החשבון השתנה; התשובה הקודמת בוטלה.', { stale: true });
     function setUser(value) {
         user = value;
         csrf = null;
@@ -19,9 +25,8 @@ window.PipelineAPI = (() => {
             headers['Content-Type'] = 'application/json';
             if (proof) {
                 if (!csrf) {
-                    const result = await request('/api/auth/csrf', { proof: false });
-                    if (requestRevision !== revision) throw new APIError(409, 'החשבון השתנה. בדקו את מצב ההתחברות ונסו שוב.');
-                    csrf = result.csrfToken;
+                    await refreshCsrf();
+                    if (requestRevision !== revision) throw staleResponse();
                 }
                 headers['X-CSRF-Token'] = csrf;
             }
@@ -31,14 +36,18 @@ window.PipelineAPI = (() => {
             response = await fetch(path, { method, headers, credentials: 'same-origin', cache: 'no-store',
                 ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
         } catch {
+            if (protectedRequest && requestRevision !== revision) throw staleResponse();
             throw new APIError(0, method === 'GET' ? 'לא ניתן להתחבר לשרת. בדקו את החיבור ונסו שוב.' : 'לא ניתן לאשר שהבקשה הושלמה. בדקו את מצב ההזמנה או החשבון לפני ניסיון נוסף.');
         }
         let data = null;
         if (response.status !== 204) {
             try { data = await response.json(); } catch { /* Proxy/non-JSON errors stay generic. */ }
         }
+        // Check before any response side effect, including error handling.
+        if (protectedRequest && requestRevision !== revision) throw staleResponse();
         if (!response.ok) {
-            if (response.status === 401 && protectedRequest && requestRevision === revision) setUser(null);
+            const sessionExpired = response.status === 401 && protectedRequest;
+            if (sessionExpired) setUser(null);
             if (response.status === 403 && requestRevision === revision) csrf = null;
             const messages = {
                 400: 'הנתונים אינם תקינים. בדקו את השדות ואת דרישות הסיסמה.',
@@ -50,10 +59,19 @@ window.PipelineAPI = (() => {
                 503: 'השירות אינו זמין כרגע. נסו שוב מאוחר יותר.'
             };
             const message = messages[response.status] || 'הבקשה נכשלה.';
-            throw new APIError(response.status, message + (method !== 'GET' && response.status >= 500 ? ' בדקו את מצב ההזמנה או החשבון לפני ניסיון נוסף.' : ''));
+            throw new APIError(response.status, message + (method !== 'GET' && response.status >= 500 ? ' בדקו את מצב ההזמנה או החשבון לפני ניסיון נוסף.' : ''), { sessionExpired });
         }
         if (response.status !== 204 && data === null) throw new APIError(0, 'התקבלה תשובה לא תקינה מהשרת.');
         return data;
+    }
+    async function refreshCsrf() {
+        const started = revision;
+        const result = await request('/api/auth/csrf', { proof: false });
+        if (started !== revision) throw staleResponse();
+        if (typeof result.csrfToken !== 'string' || !result.csrfToken) {
+            throw new APIError(502, 'התקבלה תשובת אבטחה לא תקינה.');
+        }
+        csrf = result.csrfToken;
     }
     async function restore() {
         const started = revision;
@@ -68,10 +86,16 @@ window.PipelineAPI = (() => {
     async function authenticate(mode, fields) {
         const result = await request(`/api/auth/${mode}`, { method: 'POST', body: fields, proof: false, protectedRequest: false });
         setUser(result.user);
-        // A rotated cookie must never reuse proof from the previous session.
-        const resultProof = await request('/api/auth/csrf');
-        csrf = resultProof.csrfToken;
-        return user;
+        const started = revision;
+        // Authentication already succeeded. A proof outage must not invite replay
+        // of registration/login; a later protected write may fetch proof again.
+        try {
+            await refreshCsrf();
+            return { user, csrfReady: true };
+        } catch (error) {
+            if (error.stale || error.sessionExpired || started !== revision) throw error;
+            return { user, csrfReady: false };
+        }
     }
     async function logout() {
         const started = revision;

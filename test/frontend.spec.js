@@ -175,3 +175,124 @@ test('a delayed old-session 401 cannot clear a newly authenticated account', asy
     await expect.poll(() => page.evaluate(() => PipelineAPI.user?.id)).toBe(user.id);
     await expect(page.locator('#logoutButton')).toBeVisible();
 });
+
+for (const registration of [false, true]) {
+    for (const failure of [503, 'network', 401]) {
+        test(`successful ${registration ? 'registration' : 'login'} handles CSRF ${failure} independently`, async ({ page }) => {
+            const calls = await fixture(page);
+            let attempts = 0;
+            await page.route('**/api/auth/csrf', route => {
+                attempts++;
+                if (attempts > 1) return route.fulfill({ status: 200, contentType: 'application/json', body: '{"csrfToken":"recovered-proof"}' });
+                return failure === 'network' ? route.abort('failed') : route.fulfill({ status: failure, contentType: 'application/json', body: '{}' });
+            });
+            await login(page, registration);
+            if (failure === 401) {
+                await expect(page.locator('#authResult')).toContainText('ההתחברות פגה');
+                await expect(page.locator('#openAuth')).toBeVisible();
+                expect(await page.evaluate(() => PipelineAPI.user)).toBeNull();
+            } else {
+                await expect(page.locator('#auth')).not.toBeVisible();
+                await expect(page.locator('#accountStatus')).toContainText('ההתחברות הצליחה');
+                await booking(page);
+                await page.locator('#reservationForm [type=submit]').click();
+                await expect(page.locator('#reservationResult')).toContainText('RES-TEST');
+                expect(attempts).toBe(2);
+                expect(calls.find(call => call.path === '/api/reservations').headers['x-csrf-token']).toBe('recovered-proof');
+            }
+            expect(calls.filter(call => /\/auth\/(register|login)$/.test(call.path))).toHaveLength(1);
+            await expect(page.locator('#accountPassword')).toHaveValue('');
+        });
+    }
+}
+
+for (const operation of ['create', 'lookup', 'cancel']) {
+    for (const transition of ['logout', 'switch']) {
+        for (const status of [200, 401, 503, 'network']) {
+            test(`stale ${operation} ${status} is ignored after ${transition}`, async ({ page }) => {
+                await fixture(page, { signedIn: true });
+                let release, entered;
+                const pending = new Promise(resolve => { release = resolve; });
+                const requested = new Promise(resolve => { entered = resolve; });
+                // Track the UI's exact promise so assertions wait for response processing.
+                await page.evaluate(() => {
+                    const original = PipelineAPI.request;
+                    PipelineAPI.request = (...args) => {
+                        const promise = original(...args);
+                        if (args[0].startsWith('/api/reservations') && !args[0].endsWith('/hotels')) {
+                            window.reservationRequest = promise.catch(() => {});
+                        }
+                        return promise;
+                    };
+                });
+                if (operation !== 'create') {
+                    await page.locator('[data-dialog="lookup"]').click();
+                    await page.locator('#lookupQuery').fill('RES-TEST');
+                    if (operation === 'cancel') {
+                        await page.locator('#lookupForm [type=submit]').click();
+                        await expect(page.locator('#cancelBtn')).toBeVisible();
+                    }
+                } else await booking(page);
+                const pattern = operation === 'create' ? '**/api/reservations' : operation === 'lookup' ? '**/api/reservations/lookup/**' : '**/api/reservations/RES-TEST';
+                await page.route(pattern, async route => {
+                    entered(); await pending;
+                    if (status === 'network') return route.abort('failed');
+                    await route.fulfill({ status: status === 200 && operation === 'create' ? 201 : status,
+                        contentType: 'application/json', body: JSON.stringify({ reservationId: 'PRIVATE-OLD-RESULT', fullName: 'Old Private Guest' }) });
+                });
+                if (operation === 'create') await page.locator('#reservationForm [type=submit]').click();
+                else if (operation === 'lookup') await page.locator('#lookupForm [type=submit]').click();
+                else {
+                    page.once('dialog', dialog => dialog.accept());
+                    await page.locator('#cancelBtn').click();
+                }
+                await requested;
+                await page.locator(`#${operation === 'create' ? 'booking' : 'lookup'} .close-dialog`).click();
+                if (transition === 'logout') {
+                    await page.locator('#logoutButton').click();
+                    await expect(page.locator('#accountStatus')).toHaveText('לא מחובר/ת');
+                } else {
+                    await page.route('**/api/auth/login', route => route.fulfill({ status: 200, contentType: 'application/json',
+                        body: JSON.stringify({ user: { ...user, id: 'user-2', fullName: 'New Account' } }) }));
+                    await page.evaluate(() => PipelineAPI.authenticate('login', { email: 'new@example.test', password: 'new-password-123' }));
+                    await expect(page.locator('#accountStatus')).toHaveText('שלום, New Account');
+                }
+                release();
+                await page.evaluate(() => window.reservationRequest);
+                await expect(page.locator('#reservationResult')).toBeEmpty();
+                await expect(page.locator('#lookupResult')).toBeEmpty();
+                expect(await page.evaluate(() => PipelineAPI.user?.id ?? null)).toBe(transition === 'logout' ? null : 'user-2');
+            });
+        }
+    }
+}
+
+test('delayed authentication CSRF proof cannot overwrite proof from a newer account', async ({ page }) => {
+    const calls = await fixture(page);
+    let release, entered;
+    const pending = new Promise(resolve => { release = resolve; });
+    const requested = new Promise(resolve => { entered = resolve; });
+    let attempts = 0;
+    await page.route('**/api/auth/csrf', async route => {
+        attempts++;
+        if (attempts === 1) {
+            entered(); await pending;
+            return route.fulfill({ status: 200, contentType: 'application/json', body: '{"csrfToken":"old-proof"}' });
+        }
+        return route.fulfill({ status: 200, contentType: 'application/json', body: '{"csrfToken":"new-proof"}' });
+    });
+    await page.evaluate(() => {
+        window.oldAuthentication = PipelineAPI.authenticate('login', { email: 'old@example.test', password: 'old-password-123' }).catch(error => ({ stale: error.stale }));
+    });
+    await requested;
+    await page.route('**/api/auth/login', route => route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ user: { ...user, id: 'user-2', fullName: 'New Account' } }) }));
+    await page.evaluate(() => PipelineAPI.authenticate('login', { email: 'new@example.test', password: 'new-password-123' }));
+    release();
+    expect(await page.evaluate(() => window.oldAuthentication)).toEqual({ stale: true });
+    await booking(page);
+    await page.locator('#reservationForm [type=submit]').click();
+    await expect(page.locator('#reservationResult')).toContainText('RES-TEST');
+    expect(calls.find(call => call.path === '/api/reservations').headers['x-csrf-token']).toBe('new-proof');
+    expect(await page.evaluate(() => PipelineAPI.user.id)).toBe('user-2');
+});

@@ -37,10 +37,13 @@
         if (registration) fields.fullName = document.getElementById('accountName').value.trim();
         submit.disabled = toggle.disabled = true;
         try {
-            await api.authenticate(registration ? 'register' : 'login', fields);
+            const authentication = await api.authenticate(registration ? 'register' : 'login', fields);
             dialog.close();
+            if (!authentication.csrfReady) {
+                status.textContent = `שלום, ${authentication.user.fullName}. ההתחברות הצליחה; אימות האבטחה אינו זמין כרגע וייבדק שוב לפני פעולה מוגנת.`;
+            }
         } catch (error) {
-            UI.message(result, error.message);
+            if (!error.stale) UI.message(result, error.message);
         } finally {
             document.getElementById('accountPassword').value = '';
             submit.disabled = toggle.disabled = false;
@@ -49,7 +52,7 @@
     document.getElementById('logoutButton').addEventListener('click', async event => {
         event.target.disabled = true;
         try { await api.logout(); }
-        catch (error) { status.textContent = error.status === 401 ? 'ההתחברות פגה. התחברו שוב.' : `ההתנתקות לא אושרה: ${error.message}`; }
+        catch (error) { if (!error.stale) status.textContent = error.status === 401 ? 'ההתחברות פגה. התחברו שוב.' : `ההתנתקות לא אושרה: ${error.message}`; }
         finally { event.target.disabled = false; }
     });
     api.restore().catch(error => { status.textContent = error.message; });

@@ -39,7 +39,19 @@ only in page memory; the password input is cleared after an attempt or dialog
 close. Browser password-manager behavior remains under browser/user control.
 Successful registration/login replaces old CSRF proof. Logout and protected `401`
 responses clear local account/proof and displayed reservation results. In-flight
-successful lookup/create responses are ignored after a local account change.
+reservation responses (success, HTTP errors and network failures) are ignored after
+a local account change. A current-session `401` still expires the account and
+shows the login-required message. Delayed CSRF proof cannot overwrite the newer
+account's proof. Ignoring a response does not undo a write already accepted by
+the Backend before logout or switching accounts.
+
+Registration/login success and CSRF availability are separate outcomes. If the
+Backend issues the session but proof retrieval encounters an outage, the auth dialog
+closes and the account status explicitly confirms successful authentication with
+proof temporarily unavailable. Do not repeat registration/login. The next protected
+write fetches proof before sending the write; if proof is still unavailable, no
+write is sent. A CSRF `401` instead clears the invalid session's local state and
+keeps the authentication dialog available with an expiration message.
 
 Protected `401` asks the user to log in again. `403` clears cached proof and asks
 for a refresh/status check. `404` does not distinguish foreign, legacy and absent
@@ -65,7 +77,7 @@ npx playwright install --with-deps chromium
 npm test
 ```
 
-The default suite has 36 browser tests (18 scenarios in each viewport profile)
+The default suite has 98 browser tests (49 scenarios in each viewport profile)
 and uses browser request fixtures to test success/failure contracts,
 CSRF headers, safe rendering, no storage, session restoration, reservation creation,
 lookup/cancellation/logout, keyboard dismissal, mobile and desktop geometry.
@@ -84,9 +96,10 @@ The harness imports that checkout's `createApp` and auth configuration, initiali
 real models/indexes and creates a private MongoDB 7.0.24 on loopback. It ignores
 ambient `MONGO_URL`. No application startup or migration CLI is invoked. Each
 browser uses a separate disposable account. The database is stopped after the run.
-The two integration tests cover actual cookie flags/HttpOnly isolation, register, restore, create,
+The four integration tests cover actual cookie flags/HttpOnly isolation, register, restore, create,
 lookup, safe guest text, CSRF-protected cancellation/logout, revoked session and
-login in both viewport profiles. Standalone MongoDB does not prove replica-set
+login and successful registration with a transient CSRF outage/recovery in both
+viewport profiles. Standalone MongoDB does not prove replica-set
 failover or live TLS/proxy behavior.
 
 The GitHub Actions validation job runs the fixture-based browser suite for PRs to
