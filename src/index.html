@@ -9,6 +9,11 @@
 </head>
 <body>
     <main class="hotel-home">
+        <nav class="account-bar" aria-label="חשבון משתמש">
+            <span id="accountStatus" role="status">בודק התחברות...</span>
+            <button type="button" id="openAuth" data-dialog="auth" aria-haspopup="dialog">התחברות / הרשמה</button>
+            <button type="button" id="logoutButton" hidden>התנתקות</button>
+        </nav>
         <img src="hotel-garden-new.png" width="1862" height="845" alt="איור של מלון לבן מוקף עצים ירוקים, מרפסות פורחות וגינה צבעונית" fetchpriority="high">
         <div class="home-actions" dir="ltr" lang="en">
             <button type="button" data-dialog="booking" aria-haspopup="dialog">
@@ -59,6 +64,7 @@
             <h2 id="lookup-title">חיפוש הזמנה קיימת</h2>
             <button type="button" class="close-dialog" aria-label="סגירת חלונית" title="סגירה">&#215;</button>
         </div>
+        <p>החיפוש מוגבל להזמנות שלך. הזמנות ישנות ללא בעלות מאומתת אינן זמינות כאן.</p>
         <form id="lookupForm">
             <label for="lookupQuery">מספר הזמנה, שם מלא או אימייל</label>
             <input type="text" id="lookupQuery" name="lookupQuery" autocomplete="off" required>
@@ -67,6 +73,30 @@
         <div id="lookupResult" aria-live="polite"></div>
     </dialog>
 
+    <dialog id="auth" aria-labelledby="auth-title">
+        <div class="dialog-heading">
+            <h2 id="auth-title">התחברות לחשבון</h2>
+            <button type="button" class="close-dialog" aria-label="סגירת חלונית" title="סגירה">&#215;</button>
+        </div>
+        <p>אפשר לעיין במלונות ללא התחברות. יצירה, חיפוש וביטול של הזמנות דורשים חשבון.</p>
+        <form id="authForm">
+            <div id="registrationName" hidden>
+                <label for="accountName">שם מלא</label>
+                <input id="accountName" autocomplete="name" maxlength="120">
+            </div>
+            <label for="accountEmail">כתובת אימייל</label>
+            <input id="accountEmail" type="email" autocomplete="username" maxlength="254" required>
+            <label for="accountPassword">סיסמה</label>
+            <input id="accountPassword" type="password" autocomplete="current-password" minlength="12" maxlength="128" required aria-describedby="passwordHelp">
+            <small id="passwordHelp">12–128 תווים, עד 256 בתים ב־UTF-8. הסיסמה אינה נשמרת בדפדפן על ידי האתר.</small>
+            <button type="submit" id="authSubmit">התחברות</button>
+        </form>
+        <button type="button" id="switchAuth" class="secondary-button">אין חשבון? הרשמה</button>
+        <div id="authResult" role="status" aria-live="polite"></div>
+    </dialog>
+
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
     <script src="script.js"></script>
     <script src="lookup-script.js"></script>
     <script src="dialogs.js"></script>
