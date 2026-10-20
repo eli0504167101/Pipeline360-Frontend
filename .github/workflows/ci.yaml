@@ -12,6 +12,7 @@ on:
   pull_request:
     branches:
       - main
+      - dev
 
 permissions:
   contents: read
@@ -31,9 +32,12 @@ jobs:
           node-version: "20"
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Validate frontend JavaScript
+      - name: Install browser test dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate frontend JavaScript and browser flows
         run: npm test
 
       - name: Validate required files
